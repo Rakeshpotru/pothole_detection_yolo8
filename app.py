@@ -1,3 +1,4 @@
+import numpy as np
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image, ImageDraw, ImageFont
@@ -15,22 +16,51 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file.getbuffer())
     return file_path
 
-def draw_detections(image, detections):
+def calculate_focal_length(pixel_length, distance_to_object, image_width_pixels):
+    # Using the formula: F = (P * D) / W
+    focal_length = (pixel_length * distance_to_object) / image_width_pixels
+    return focal_length
+
+def calculate_real_world_length(focal_length, pixel_length, image_width_pixels, DISTANCE_TO_OBJECT):
+    # Using the formula: W = (P * F) / D
+    real_world_length = (pixel_length * focal_length) / DISTANCE_TO_OBJECT
+    return real_world_length
+
+def draw_detections(image, detections,shape):
     draw = ImageDraw.Draw(image)
+    height, width =shape
+    # with Image.open(image) as img:
+    #     shape = np.array(img).shape
+
     font = ImageFont.load_default()
-    #ImageFont.truetype('Ubuntu-R.ttf', 16)  # Replace with your desired font and size
+    
+    # Conversion factor from pixels to meters
+    pixel_to_meter = 0.001  # Update this based on your actual measurement
+    
     for det in detections:
         x1, y1, x2, y2 = map(int, det[:4])
         conf, cls_id = det[4:]
-        
-        # Calculate area in cm² (assuming you know the conversion factor from pixels to cm)
-        # Here I'm assuming each pixel is 0.026458 cm (which might vary based on the context).
-        pixel_to_cm = 0.026458  
-        area_pixels = (x2 - x1) * (y2 - y1)
-        area_cm2 = area_pixels * (pixel_to_cm ** 2)
+        #pixel_to_cm = 0.026458
+        # Constants
+        DISTANCE_TO_OBJECT = 100  # Distance from camera to object in cm (0.9 meters)
+        IMAGE_WIDTH_PIXELS = width  # Example image width in pixels
+        FOCAL_LENGTH = None  # Focal length (to be calculated)  
+        pixel_length = y2 - y1  # Length of the object in pixels
+        # Calculate focal length based on the provided values
+        FOCAL_LENGTH = calculate_focal_length(pixel_length, DISTANCE_TO_OBJECT, IMAGE_WIDTH_PIXELS)
 
-        label = f'{int(cls_id)} {conf:.2f} | Area: {area_cm2:.2f} cm²'
-        st.success(f"Area {area_cm2:.2f} cm² ")
+        # Calculate the real-world dimensions
+        real_world_length = calculate_real_world_length(FOCAL_LENGTH, pixel_length, IMAGE_WIDTH_PIXELS,DISTANCE_TO_OBJECT)
+        real_world_width = calculate_real_world_length(FOCAL_LENGTH, x2 - x1, IMAGE_WIDTH_PIXELS, DISTANCE_TO_OBJECT)
+        # Calculate area in meters²
+        # area_pixels = (x2 - x1) * (y2 - y1)
+        # area_m2 = area_pixels * (pixel_to_meter ** 2)
+        area_cm2 = real_world_length * real_world_width
+        area_m2 = area_cm2 /10000
+
+
+        label = f'{int(cls_id)} {conf:.2f} | Area: {area_m2:.2f} m²'
+        st.success(f"Area {area_m2:.2f} m² ")
         draw.rectangle([x1, y1, x2, y2], outline=(255, 0, 0), width=2)
         text_width = font.getlength(label)
         text_height = font.getbbox(label)[3]  # Get the height from the bounding box
@@ -58,7 +88,7 @@ def generate_roadmap(image, detections, threshold=5):
     if road_blocked:
         draw = ImageDraw.Draw(image)
         draw.line([(0, 0), (image.width, image.height)], fill=(255, 0, 0), width=10)
-        draw.text((10, 10), "Road Blocked", font=ImageFont.truetype("arial.ttf", 36), fill=(255, 0, 0))
+        #draw.text((10, 10), "Road Blocked", font=ImageFont.truetype("arial.ttf", 36), fill=(255, 0, 0))
     return image, road_blocked
 
 st.title('Pothole Detection')
@@ -78,17 +108,18 @@ if uploaded_file is not None:
     file_path = save_uploaded_file(uploaded_file)
 
     if uploaded_file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
-        results = model(file_path, conf=0.1)
+        results = model(file_path, conf=0.2)
 
         # Iterate over the results and display each processed image
         for result in results:
             result_image = result.orig_img
+            shape = 1280,720
             st.image(result_image, caption='Processed Image', use_column_width=True)
 
             detections = result.boxes.data.tolist()
             if detections:
                 annotated_image = Image.fromarray(result_image)
-                annotated_image = draw_detections(annotated_image, detections)
+                annotated_image = draw_detections(annotated_image, detections, shape)
                 roadmap_image, road_blocked = generate_roadmap(annotated_image, detections, threshold=5)
                 st.image(roadmap_image, caption='Roadmap', use_column_width=True)
                 if road_blocked:
@@ -116,7 +147,7 @@ if uploaded_file is not None:
                     if not ret:
                         break
 
-                    results = model(frame, conf=0.25)
+                    results = model(frame, conf=0.1)
 
                     for result in results:
                         detections = result.boxes.data.tolist()
