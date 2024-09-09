@@ -15,6 +15,7 @@ def save_uploaded_file(uploaded_file):
         f.write(uploaded_file.getbuffer())
     return file_path
 
+
 def draw_detections(image, detections):
     draw = ImageDraw.Draw(image)
     font = ImageFont.truetype("arial.ttf", 50)
