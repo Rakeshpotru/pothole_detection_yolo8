@@ -1,1 +1,11 @@
 y8best.pt
+.idea/misc.xml
+.idea/modules.xml
+.idea/pothole_detection_yolo8.iml
+.idea/vcs.xml
+.idea/workspace.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
+content/runs/detect/train7/weights/best.pt
+content/runs/detect/train7/weights/best1.pt
+content/runs/detect/train7/weights/bests.pt
