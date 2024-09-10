@@ -66,8 +66,8 @@ current_dir = os.path.dirname(__file__)
 # Model selection
 model_version = st.selectbox('Choose your model:', ('yolov8n', 'yolov8m'))
 model_paths = {
-    'yolov8n': current_dir + '//content//runs//detect//train6//weights//best.pt',
-    'yolov8m': current_dir + '//content//runs//detect//train6//weights//best.pt'
+    'yolov8n': current_dir + '//content//runs//detect//train5//weights//best.pt',
+    'yolov8m': current_dir + '//content//runs//detect//train5//weights//best.pt'
 }
 model_path = model_paths[model_version]
 model = YOLO(model_path)
