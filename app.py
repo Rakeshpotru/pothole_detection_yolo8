@@ -58,7 +58,7 @@ def generate_roadmap(image, detections, threshold=5):
     if road_blocked:
         draw = ImageDraw.Draw(image)
         draw.line([(0, 0), (image.width, image.height)], fill=(255, 0, 0), width=10)
-        draw.text((10, 10), "Road Blocked", font=ImageFont.truetype("arial.ttf", 36), fill=(255, 0, 0))
+        draw.text((10, 10), "Road Blocked", font=ImageFont.load_default(), fill=(255, 0, 0))
     return image, road_blocked
 
 st.title('Pothole Detection')
