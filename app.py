@@ -17,7 +17,7 @@ def save_uploaded_file(uploaded_file):
 
 def draw_detections(image, detections):
     draw = ImageDraw.Draw(image)
-    font = ImageFont.truetype("arial.ttf", 50)
+    font = ImageFont.load_default(size=56)
     #ImageFont.truetype('Ubuntu-R.ttf', 16)  # Replace with your desired font and size
     for det in detections:
         x1, y1, x2, y2 = map(int, det[:4])
